@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { logger } from "hono-pino";
 import { pino } from "pino";
 import pretty from "pino-pretty";
+import expenses from "./routes/expenses";
 
 const app = new Hono();
 
@@ -17,6 +18,7 @@ app.use(pinoLogger());
 
 app
   .get("/", (c) => c.text("Hello Bun!"))
-  .get("/test", (c) => c.json({ message: "this is test route" }));
+  .get("/test", (c) => c.json({ message: "this is test route" }))
+  .route("/expenses", expenses);
 
 export default app;
