@@ -1,0 +1,20 @@
+{
+  "name": "fs-bun-hono-react",
+  "module": "index.ts",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "start": "bun run index.ts",
+    "dev": "bun --watch index.ts"
+  },
+  "type": "module",
+  "dependencies": {
+    "hono-pino": "^0.7.0",
+    "pino": "^9.6.0",
+    "pino-pretty": "^13.0.0"
+  }
+}
