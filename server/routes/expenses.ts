@@ -17,11 +17,9 @@ const FakeDb: Expense[] = [
   { id: 4, title: "Rent", amount: 500 },
   { id: 5, title: "Gym Membership", amount: 30 },
 ];
-
-const expenses = new Hono();
 const createPostSchema = expenseSchema.omit({ id: true });
 
-expenses
+const expenses = new Hono()
   .get("/", (c) => {
     return c.json({ expenses: FakeDb });
   })

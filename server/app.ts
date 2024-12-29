@@ -3,6 +3,7 @@ import { logger } from "hono-pino";
 import { pino } from "pino";
 import pretty from "pino-pretty";
 import expenses from "./routes/expenses";
+import { serveStatic } from "hono/bun";
 
 const app = new Hono();
 
@@ -14,12 +15,15 @@ const pinoLogger = () =>
     },
   });
 
-app.use(pinoLogger());
+app.use("*", pinoLogger());
+
+const apiRouters = app.basePath("/api").route("/expenses", expenses);
 
 app
-  .get("/", (c) => c.text("Hello Bun!"))
-  .get("/test", (c) => c.json({ message: "this is test route" }))
-  .route("/api/expenses", expenses)
-  .all("/*", (c) => c.text("route not found"));
+  .get("*", serveStatic({ root: "./frontend/dist" }))
+  .get("*", serveStatic({ path: "./frontend/dist/index.html" }))
+  .all("*", (c) => c.text("route not found"));
 
 export default app;
+
+export type ApiRoutes = typeof apiRouters;

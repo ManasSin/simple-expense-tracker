@@ -1,35 +1,50 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
-import "./App.css";
+import { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from "./components/ui/card";
+import { Button } from "./components/ui/button";
+import { api } from "@/lib/api";
 
 function App() {
-  const [count, setCount] = useState(0);
+  const [totalExpense, setTotalExpense] = useState<number>(0);
+
+  useEffect(() => {
+    async function fetchTotalExpense() {
+      const data = await api.expenses["total-spent"].$get();
+
+      const total = await data.json();
+      setTotalExpense(total.total);
+      return total;
+    }
+    // ;(async () => {
+    //   const data = await fetch("/api/expenses/total-spent")
+
+    //   const total = await data.json()
+    //   setTotalExpense(total.total)
+    //   return total
+    // })()
+
+    fetchTotalExpense();
+  }, []);
+
+  console.log(totalExpense);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <p className="text-black font-extrabold block">check</p>
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <Card className="max-w-md mx-auto ">
+      <CardHeader>
+        <CardTitle>Total Expense</CardTitle>
+        <CardDescription>The total amount you have spent</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button onClick={() => setTotalExpense(totalExpense + 1)}>Add</Button>
+      </CardContent>
+      <CardFooter>{totalExpense}</CardFooter>
+    </Card>
   );
 }
 
