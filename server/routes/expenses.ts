@@ -3,14 +3,14 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 
 const expenseSchema = z.object({
-  id: z.coerce.number().min(2).max(100),
+  id: z.coerce.number().int().positive().min(1),
   title: z.string(),
   amount: z.number().int().positive(),
 });
 
-type expenseSchemaType = z.infer<typeof expenseSchema>;
+type Expense = z.infer<typeof expenseSchema>;
 
-const FakeDb: expenseSchemaType[] = [
+const FakeDb: Expense[] = [
   { id: 1, title: "Groceries", amount: 50 },
   { id: 2, title: "Electricity Bill", amount: 75 },
   { id: 3, title: "Internet Bill", amount: 40 },
@@ -19,6 +19,7 @@ const FakeDb: expenseSchemaType[] = [
 ];
 
 const expenses = new Hono();
+const createPostSchema = expenseSchema.omit({ id: true });
 
 expenses
   .get("/", (c) => {
@@ -38,15 +39,15 @@ expenses
   //     }
   //   });
   // instead of doing all the above dance, we can just do.
-  .post(
-    "/",
-    zValidator("json", expenseSchema.omit({ id: true })),
-    async (c) => {
-      const json = c.req.valid("json");
-      FakeDb.push({ id: FakeDb.length + 1, ...json });
-      return c.json(json);
-    }
-  )
+  .post("/", zValidator("json", createPostSchema), async (c) => {
+    const json = c.req.valid("json");
+    FakeDb.push({ id: FakeDb.length + 1, ...json });
+    return c.json(json);
+  })
+  .get("/total-spent", (c) => {
+    const TotalSpent = FakeDb.reduce((acc, sum) => sum.amount + acc, 0);
+    return c.json({ total: TotalSpent });
+  })
   .get("/:id{[0-9]+}", (c) => {
     // this a way in hono to check if the param is of type number even before landing to that route. read more here https://hono.dev/docs/api/routing#regexp
     const id = Number.parseInt(c.req.param("id"));

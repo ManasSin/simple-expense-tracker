@@ -19,6 +19,7 @@ app.use(pinoLogger());
 app
   .get("/", (c) => c.text("Hello Bun!"))
   .get("/test", (c) => c.json({ message: "this is test route" }))
-  .route("/expenses", expenses);
+  .route("/api/expenses", expenses)
+  .all("/*", (c) => c.text("route not found"));
 
 export default app;
