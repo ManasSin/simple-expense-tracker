@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
+import { Button } from "./components/ui/button";
 import {
   Card,
   CardContent,
@@ -7,32 +9,27 @@ import {
   CardHeader,
   CardTitle
 } from "./components/ui/card";
-import { Button } from "./components/ui/button";
-import { api } from "@/lib/api";
+
+async function getTotalSpent() {
+  const res = await api.expenses["total-spent"].$get();
+  if (!res.ok) {
+    throw new Error("server error");
+  }
+
+  const data = await res.json();
+  return data;
+}
 
 function App() {
-  const [totalExpense, setTotalExpense] = useState<number>(0);
+  const { data, error, isLoading, isPending } = useQuery({
+    queryKey: ["get-total-expenses"],
+    queryFn: getTotalSpent
+  });
 
-  useEffect(() => {
-    async function fetchTotalExpense() {
-      const data = await api.expenses["total-spent"].$get();
+  console.log(data?.total, error, isLoading);
+  if (isPending) return "loading ...";
 
-      const total = await data.json();
-      setTotalExpense(total.total);
-      return total;
-    }
-    // ;(async () => {
-    //   const data = await fetch("/api/expenses/total-spent")
-
-    //   const total = await data.json()
-    //   setTotalExpense(total.total)
-    //   return total
-    // })()
-
-    fetchTotalExpense();
-  }, []);
-
-  console.log(totalExpense);
+  if (error) return "An error has occurred: " + error.message;
 
   return (
     <Card className="max-w-md mx-auto ">
@@ -41,9 +38,9 @@ function App() {
         <CardDescription>The total amount you have spent</CardDescription>
       </CardHeader>
       <CardContent>
-        <Button onClick={() => setTotalExpense(totalExpense + 1)}>Add</Button>
+        <Button onClick={() => data?.total || 0 + 1}>Add</Button>
       </CardContent>
-      <CardFooter>{totalExpense}</CardFooter>
+      <CardFooter>{data?.total}</CardFooter>
     </Card>
   );
 }
