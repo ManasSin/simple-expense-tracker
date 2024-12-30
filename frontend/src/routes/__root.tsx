@@ -18,7 +18,7 @@ function Navbar() {
         Expenses
       </Link>{" "}
       <Link to="/create-expense" className="[&.active]:font-bold">
-        About
+        Add Expense
       </Link>
     </div>
   );

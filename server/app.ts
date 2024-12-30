@@ -4,6 +4,7 @@ import { pino } from "pino";
 import pretty from "pino-pretty";
 import expenses from "./routes/expenses";
 import { serveStatic } from "hono/bun";
+import { authRoute } from "./routes/auth";
 
 const app = new Hono();
 
@@ -17,7 +18,10 @@ const pinoLogger = () =>
 
 app.use("*", pinoLogger());
 
-const apiRouters = app.basePath("/api").route("/expenses", expenses);
+const apiRouters = app
+  .basePath("/api")
+  .route("/expenses", expenses)
+  .route("/auth", authRoute);
 
 app
   .get("*", serveStatic({ root: "./frontend/dist" }))
