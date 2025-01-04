@@ -1,4 +1,7 @@
-import { api } from "@/lib/api";
+import {
+  getExpensesQueryOption,
+  loadingCreateExpenseQueryOption
+} from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -14,30 +17,22 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export const Route = createFileRoute("/expense")({
+export const Route = createFileRoute("/_authenticated/expense")({
   component: Expenses
 });
 
-async function getTotalSpent() {
-  await new Promise((r) => setTimeout(r, 1000));
-  const res = await api.expenses.$get();
-  if (!res.ok) {
-    throw new Error("server error");
-  }
-
-  const data = await res.json();
-  return data;
-}
-
 function Expenses() {
-  const { data, error, isPending } = useQuery({
-    queryKey: ["get-total-expenses"],
-    queryFn: getTotalSpent
-  });
+  const { data, error, isPending } = useQuery(getExpensesQueryOption);
+  const { data: loadingCreationExpense } = useQuery(
+    loadingCreateExpenseQueryOption
+  );
+
+  if (isPending) return "loading ...";
 
   if (error) return "An error has occurred: " + error.message;
   return (
     <div className="flex max-w-xl flex-col gap-5 mx-auto">
+      {JSON.stringify(loadingCreationExpense)}
       <Table className="mt-10 border backdrop-blur-sm">
         <TableCaption>A list of your expenses.</TableCaption>
         <TableHeader>
@@ -49,6 +44,16 @@ function Expenses() {
           </TableRow>
         </TableHeader>
         <TableBody>
+          {loadingCreationExpense && (
+            <TableRow>
+              <TableCell className="font-medium">
+                <Skeleton className="h-4" />
+              </TableCell>
+              <TableCell>{loadingCreationExpense?.expense?.title}</TableCell>
+              <TableCell>{loadingCreationExpense?.expense?.amount}</TableCell>
+              <TableCell>{loadingCreationExpense?.expense?.date}</TableCell>
+            </TableRow>
+          )}
           {isPending
             ? Array(3)
                 .fill(0)
@@ -65,11 +70,12 @@ function Expenses() {
                     </TableCell>
                   </TableRow>
                 ))
-            : data?.expenses.map((expense) => (
+            : data.expenses.map((expense) => (
                 <TableRow key={expense.id}>
                   <TableCell className="font-medium">{expense.id}</TableCell>
                   <TableCell>{expense.title}</TableCell>
                   <TableCell>{expense.amount}</TableCell>
+                  <TableCell>{expense.date}</TableCell>
                   {/* <TableCell className="text-right">
                 {invoice.totalAmount}
               </TableCell> */}

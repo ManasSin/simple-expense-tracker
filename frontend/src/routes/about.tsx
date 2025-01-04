@@ -5,5 +5,10 @@ export const Route = createFileRoute("/about")({
 });
 
 function About() {
-  return <div className="p-2">Hello from About!</div>;
+  return (
+    <div className="">
+      <p className="text-bold">please login to access this route</p>
+      <a href="/api/auth/logout">Logout</a>
+    </div>
+  );
 }

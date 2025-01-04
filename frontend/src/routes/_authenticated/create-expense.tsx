@@ -1,13 +1,22 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-
+import { QueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import type { FieldApi } from "@tanstack/react-form";
+
+import { toast } from "sonner";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
-import { api } from "@/lib/api";
+import {
+  createExpense,
+  getExpensesQueryOption,
+  loadingCreateExpenseQueryOption
+} from "@/lib/api";
+
+import { createExpenseSchema } from "@server/Types";
+import { Calendar } from "@/components/ui/calendar";
 
 function FieldInfo({ field }: { field: FieldApi<any, any, any, any> }) {
   return (
@@ -20,25 +29,48 @@ function FieldInfo({ field }: { field: FieldApi<any, any, any, any> }) {
   );
 }
 
-export const Route = createFileRoute("/create-expense")({
+export const Route = createFileRoute("/_authenticated/create-expense")({
   component: CreateExpense
 });
 
 function CreateExpense() {
+  const queryClient = new QueryClient();
   const navigate = useNavigate();
   const form = useForm({
     defaultValues: {
       title: "",
-      amount: 0
+      amount: "0",
+      date: new Date().toISOString()
     },
-    onSubmit: async ({ value }) => {
-      await new Promise((r) => setTimeout(r, 3000));
-      const res = await api.expenses.$post({ json: value });
-      if (!res.ok) {
-        throw new Error(res.statusText);
-      }
 
+    onSubmit: async ({ value }) => {
+      const existingExpenses = await queryClient.ensureQueryData(
+        getExpensesQueryOption
+      );
       navigate({ to: "/expense" });
+
+      // loading state
+      queryClient.setQueryData(loadingCreateExpenseQueryOption.queryKey, {
+        expense: value
+      });
+      try {
+        const expense = await createExpense({ value });
+
+        queryClient.setQueryData(getExpensesQueryOption.queryKey, {
+          ...existingExpenses,
+          expenses: [expense, ...existingExpenses.expenses]
+        });
+        toast("Expense created", {
+          description: `${expense.title} has been created`
+        });
+      } catch (error) {
+        // handle error
+        toast("Something went wrong", {
+          description: (error as Error).message
+        });
+      } finally {
+        queryClient.setQueryData(loadingCreateExpenseQueryOption.queryKey, {});
+      }
     }
   });
 
@@ -55,20 +87,23 @@ function CreateExpense() {
         <div className="">
           <form.Field
             name="title"
+            // validators={{
+            //   onChange: ({ value }) =>
+            //     !value
+            //       ? "A title is required"
+            //       : value.length < 3
+            //         ? "Title must be at least 3 characters"
+            //         : undefined,
+            //   onChangeAsyncDebounceMs: 500,
+            //   onChangeAsync: async ({ value }) => {
+            //     // await new Promise((resolve) => setTimeout(resolve, 1000));
+            //     return (
+            //       value.includes("error") && 'No "error" allowed in first name'
+            //     );
+            //   }
+            // }}
             validators={{
-              onChange: ({ value }) =>
-                !value
-                  ? "A title is required"
-                  : value.length < 3
-                    ? "Title must be at least 3 characters"
-                    : undefined,
-              onChangeAsyncDebounceMs: 500,
-              onChangeAsync: async ({ value }) => {
-                // await new Promise((resolve) => setTimeout(resolve, 1000));
-                return (
-                  value.includes("error") && 'No "error" allowed in first name'
-                );
-              }
+              onChange: createExpenseSchema.shape.title
             }}
             children={(field) => {
               // Avoid hasty abstractions. Render props are great!
@@ -90,6 +125,33 @@ function CreateExpense() {
             }}
           />
         </div>
+
+        <div className="basis-full  self-center">
+          <form.Field
+            name="date"
+            validators={{
+              onChange: createExpenseSchema.shape.date
+            }}
+            children={(field) => {
+              // Avoid hasty abstractions. Render props are great!
+              return (
+                // <div className="flex flex-col gap-2 justify-start align-top">
+                <>
+                  <Calendar
+                    id={field.name}
+                    mode="single"
+                    selected={new Date(field.state.value)}
+                    onSelect={(date) =>
+                      field.handleChange((date ?? new Date()).toISOString())
+                    }
+                    className=""
+                  />
+                  <FieldInfo field={field} />
+                </>
+              );
+            }}
+          />
+        </div>
         <div className="">
           <form.Field
             name="amount"
@@ -101,16 +163,9 @@ function CreateExpense() {
               onChangeAsyncDebounceMs: 50,
               onChangeAsync: async ({ value }) => {
                 // await new Promise((resolve) => setTimeout(resolve, 1000));
-                return (
-                  // !value
-                  //   ? "An amount is required"
-                  //   :
-                  !(typeof value === "number")
-                    ? "An amount should be a number"
-                    : // : value <= 0
-                      //   ? "Amount must be greater than 0"
-                      undefined
-                );
+                return !(typeof value === "number")
+                  ? "An amount should be a number"
+                  : undefined;
               }
             }}
             children={(field) => (
@@ -123,7 +178,7 @@ function CreateExpense() {
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   type="number"
-                  onChange={(e) => field.handleChange(Number(e.target.value))}
+                  onChange={(e) => field.handleChange(e.target.value)}
                   // className="border border-gray-300 rounded-md px-2 py-1 bg-background text-foreground my-1 max-w-sm"
                 />
                 <FieldInfo field={field} />
