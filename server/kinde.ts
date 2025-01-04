@@ -1,9 +1,12 @@
+import { z } from "zod";
 import { type Context } from "hono";
+import { createFactory, createMiddleware } from "hono/factory";
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import {
   createKindeServerClient,
   GrantType,
   type SessionManager,
+  type UserType,
 } from "@kinde-oss/kinde-typescript-sdk";
 import { envKinde } from "./env";
 
@@ -50,4 +53,29 @@ export const sessionManager = (c: Context): SessionManager => ({
       deleteCookie(c, key);
     });
   },
+});
+
+type Env = {
+  Variables: {
+    user: UserType;
+  };
+};
+
+export const getUserMiddleware = createMiddleware<Env>(async (c, next) => {
+  try {
+    const manager = sessionManager(c);
+    const isAuthenticated = await kindeClient.isAuthenticated(manager);
+
+    if (!isAuthenticated) {
+      return c.json({ message: "you are not logged in " }, 401);
+    }
+
+    const user = await kindeClient.getUserProfile(manager);
+    c.set("user", user);
+
+    await next();
+  } catch (error) {
+    console.error(error);
+    return c.json({ message: "you are not logged in " }, 401);
+  }
 });
