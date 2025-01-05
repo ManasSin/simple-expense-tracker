@@ -126,32 +126,6 @@ function CreateExpense() {
           />
         </div>
 
-        <div className="basis-full  self-center">
-          <form.Field
-            name="date"
-            validators={{
-              onChange: createExpenseSchema.shape.date
-            }}
-            children={(field) => {
-              // Avoid hasty abstractions. Render props are great!
-              return (
-                // <div className="flex flex-col gap-2 justify-start align-top">
-                <>
-                  <Calendar
-                    id={field.name}
-                    mode="single"
-                    selected={new Date(field.state.value)}
-                    onSelect={(date) =>
-                      field.handleChange((date ?? new Date()).toISOString())
-                    }
-                    className=""
-                  />
-                  <FieldInfo field={field} />
-                </>
-              );
-            }}
-          />
-        </div>
         <div className="">
           <form.Field
             name="amount"
@@ -186,6 +160,34 @@ function CreateExpense() {
             )}
           />
         </div>
+
+        <div className="basis-full self-center">
+          <form.Field
+            name="date"
+            validators={{
+              onChange: createExpenseSchema.shape.date
+            }}
+            children={(field) => {
+              // Avoid hasty abstractions. Render props are great!
+              return (
+                // <div className="flex flex-col gap-2 justify-start align-top">
+                <>
+                  <Calendar
+                    id={field.name}
+                    mode="single"
+                    selected={new Date(field.state.value)}
+                    onSelect={(date) =>
+                      field.handleChange((date ?? new Date()).toISOString())
+                    }
+                    className=""
+                  />
+                  <FieldInfo field={field} />
+                </>
+              );
+            }}
+          />
+        </div>
+
         <form.Subscribe
           selector={(state) => [state.canSubmit, state.isSubmitting]}
           children={([canSubmit, isSubmitting]) => (
